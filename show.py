@@ -97,6 +97,8 @@ def show_data_in_dir(imgs_dir,xmls_dir,windowname='ORG',class_color={},showname=
     Args:
         imgs_dir:图片目录
         xmls_dir:标注文件xml目录，voc格式
+        windowname：显示窗口名
+        class_color：类别显示颜色的BGR值
         showname:是否显示类别名
         maxcls:最大类别
         delete:是否删除没有图片的xml文件
@@ -127,6 +129,8 @@ def show_data_in_dir(imgs_dir,xmls_dir,windowname='ORG',class_color={},showname=
                 print('%s not exist!'%img_file)
                 if delete:
                     os.remove(xml_file)
+                    print(xml_file,'has been removed!')
+                    idx += 1
                 continue
             print(img_name)
             key = show_data(img_file,xml_file,windowname,class_color,showname,maxcls,wait_sec)
@@ -135,24 +139,89 @@ def show_data_in_dir(imgs_dir,xmls_dir,windowname='ORG',class_color={},showname=
                 wait_sec = 1-wait_sec
             elif(key==ord('q') or key==ord('Q') ):
                 return 0
-            elif(key==2424832 or key==2490368):
-                #左、上方向键查看上一张图片
+            elif(key==2424832 or key==2490368 or key == ord('p')):
+                #左、上方向键或p查看上一张图片
                 idx -= 1
             else:
                 idx += 1
     cv2.destroyAllWindows()
     return 0
+
+def show_data_in_pathfile(pathfile,windowname='ORG',class_color={},showname=True,maxcls=20):
+    '''根据pathfile文件中的图片路径显示图片和标注框，要求以voc标准格式存放
+    Args:
+        pathfile：图片路径文件
+        windowname：显示窗口名
+        class_color：类别颜色的RGB值
+        showname:是否显示类别名
+        maxcls:最大类别
+    '''    
+    imgpathfiles = open(pathfile)
+    imgfilelines = imgpathfiles.readlines()
+    fileCount = len(imgfilelines)
+    print("----------- %d images------------"%fileCount)
+
+    count = 0    
+    cv2.namedWindow(windowname,cv2.WINDOW_AUTOSIZE)
+    wait_sec = 0
+    
+    idx = 0
+    while idx < fileCount:
+        imgfile = imgfilelines[idx].strip()
+        dirname = os.path.dirname(imgfile).replace('JPEGImages','Annotations')
+        xmlfile = os.path.join(dirname,os.path.basename(imgfile).split('.')[0]+'.xml')
+        
+        count += 1
+        if count%100 == 0:
+            print('[%d | %d]%d%%'%(fileCount,count,count*100/fileCount))
             
+        
+        if not os.path.exists(xmlfile):
+            print(xmlfile,' not exist!')
+            idx += 1
+            continue
+        if not os.path.exists(imgfile):
+            print(imgfile,' not exist')
+            idx += 1
+            continue
+        
+        print(os.path.basename(imgfile))
+        key = show_data(imgfile,xmlfile,windowname,class_color,showname,maxcls,wait_sec)
+        
+        if(32==key):
+            wait_sec = 1-wait_sec
+        elif(key==ord('q') or key==ord('Q') ):
+            return 0
+        elif(2424832==key or 2490368==key or key==ord('p')):
+            #左、上方向键或p查看上一张图片
+            idx -= 1
+        else:
+            idx += 1
+    cv2.destroyAllWindows()        
+    
+
+           
 def main():
     img_file = 'C:/Users/zxl/Desktop/test/JPEGImages/036.jpg'
     xml_file = 'C:/Users/zxl/Desktop/test/Annotations/036.xml'
 #    imgs_dir = 'C:/Users/zxl/Desktop/test/JPEGImages/'
 #    xmls_dir = 'C:/Users/zxl/Desktop/test/Annotations/'
-    imgs_dir = 'C:/Users/zxl/Desktop/test/mosaic_imgs/'
-    xmls_dir = 'C:/Users/zxl/Desktop/test/mosaic_xmls/'
+    imgs_dir = 'C:/Users/zxl/Desktop/test/trans_imgs/'
+    xmls_dir = 'C:/Users/zxl/Desktop/test/trans_xmls/'
+    
+    # imgpathsfile = 'E:/myjob/DataSet/DETRAC_VOC_v2/detrac_train_v2.txt'
+    
     #show_data(img_file,xml_file) #显示单张图片标注框
+    
+    #显示文件夹中的图片和标注文件
     #空格键连续显示，左、上键显示上一张，右、下键显示下一张，q键退出
     show_data_in_dir(imgs_dir,xmls_dir,showname=True,maxcls=20)
+    
+    #显示路径文件中的图片和标注文件（voc标准格式）
+    #空格键连续显示，左、上键和p 显示上一张，右、下键显示下一张，q键退出
+    #show_data_in_pathfile(imgpathsfile)
+    
+    
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
